@@ -300,7 +300,7 @@
               <input id="password" name="password" type="password" placeholder="Crea una contraseña (mín. 8 caracteres)" autocomplete="new-password" minlength="8" required />
               <button type="submit">Crear cuenta&nbsp; →</button>
             </form>
-            <div class="form-note" id="form-note" aria-live="polite">El acceso está limitado a personas mayores de edad según las leyes de su lugar de residencia. El nombre y el correo se guardan en el servidor; las contraseñas se guardan como hashes con sal aleatoria.</div>
+            <div class="form-note" id="form-note" aria-live="polite">El acceso está limitado a personas mayores de edad según las leyes de su lugar de residencia. Los registros se guardan en almacenamiento privado; las contraseñas nunca se almacenan en texto plano.</div>
             <div class="hero-meta"><span><i></i> Compatible con criptomonedas</span><span><i></i> Juego justo</span><span><i></i> Próximamente</span></div>
           </div>
           <div class="visual" aria-label="Ilustración de cartas y una mesa de casino">
@@ -397,7 +397,7 @@
         })
           .then(async (response) => {
             const result = await response.json();
-            if (!response.ok) throw new Error(result.error || "Unable to save signup.");
+            if (!response.ok) throw new Error(result.error || "No se pudo guardar el registro.");
             form.reset();
             note.textContent = "¡Ya estás en la lista! Guardamos tu registro de forma segura.";
             note.className = "form-note success";

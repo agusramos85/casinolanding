@@ -1,11 +1,9 @@
 import { createServer } from "node:http";
-import { randomBytes, scrypt as scryptCallback } from "node:crypto";
-import { promisify } from "node:util";
 import { mkdir, open, readFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { createSignupRecord, SignupInputError } from "./lib/signup.mjs";
 
-const scrypt = promisify(scryptCallback);
 const root = dirname(fileURLToPath(import.meta.url));
 const dataDirectory = process.env.SIGNUP_DATA_DIR ?? join(root, "private-data");
 const signupFile = join(dataDirectory, "signups.txt");
@@ -52,37 +50,7 @@ async function saveSignup(request, response) {
   }
 
   const body = await readJson(request);
-  if (!body || typeof body !== "object" || Array.isArray(body)) {
-    respond(response, 400, { error: "La solicitud debe incluir los datos del registro." });
-    return;
-  }
-  const name = typeof body.name === "string" ? body.name.trim() : "";
-  const email = typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
-  const password = typeof body.password === "string" ? body.password : "";
-
-  if (!name || name.length > 100) {
-    respond(response, 400, { error: "Ingresa un nombre de entre 1 y 100 caracteres." });
-    return;
-  }
-  if (email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    respond(response, 400, { error: "Ingresa un correo electrónico válido." });
-    return;
-  }
-  if (password.length < 8 || Buffer.byteLength(password, "utf8") > 128) {
-    respond(response, 400, { error: "La contraseña debe tener al menos 8 caracteres y no superar los 128 bytes." });
-    return;
-  }
-
-  const salt = randomBytes(16);
-  const passwordHash = await scrypt(password, salt, 64);
-  const record = {
-    name,
-    email,
-    createdAt: new Date().toISOString(),
-    passwordHash: passwordHash.toString("base64url"),
-    passwordSalt: salt.toString("base64url"),
-    passwordHashAlgorithm: "scrypt",
-  };
+  const record = await createSignupRecord(body);
 
   await mkdir(dataDirectory, { recursive: true, mode: 0o700 });
   const file = await open(signupFile, "a", 0o600);
@@ -117,6 +85,10 @@ const server = createServer(async (request, response) => {
 
     respond(response, 404, { error: "No encontrado." });
   } catch (error) {
+    if (error instanceof SignupInputError) {
+      respond(response, 400, { error: error.message });
+      return;
+    }
     if (error.status) {
       respond(response, error.status, { error: error.message });
       return;
