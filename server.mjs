@@ -29,7 +29,7 @@ async function readJson(request) {
   for await (const chunk of request) {
     length += chunk.length;
     if (length > maxRequestBytes) {
-      const error = new Error("Request body is too large.");
+      const error = new Error("La solicitud es demasiado grande.");
       error.status = 413;
       throw error;
     }
@@ -39,7 +39,7 @@ async function readJson(request) {
   try {
     return JSON.parse(Buffer.concat(chunks).toString("utf8"));
   } catch {
-    const error = new Error("Request must contain valid JSON.");
+    const error = new Error("La solicitud debe contener JSON válido.");
     error.status = 400;
     throw error;
   }
@@ -47,13 +47,13 @@ async function readJson(request) {
 
 async function saveSignup(request, response) {
   if (!request.headers["content-type"]?.includes("application/json")) {
-    respond(response, 415, { error: "Content-Type must be application/json." });
+    respond(response, 415, { error: "El tipo de contenido debe ser application/json." });
     return;
   }
 
   const body = await readJson(request);
   if (!body || typeof body !== "object" || Array.isArray(body)) {
-    respond(response, 400, { error: "Request must contain a signup object." });
+    respond(response, 400, { error: "La solicitud debe incluir los datos del registro." });
     return;
   }
   const name = typeof body.name === "string" ? body.name.trim() : "";
@@ -61,15 +61,15 @@ async function saveSignup(request, response) {
   const password = typeof body.password === "string" ? body.password : "";
 
   if (!name || name.length > 100) {
-    respond(response, 400, { error: "Enter a name of 1 to 100 characters." });
+    respond(response, 400, { error: "Ingresa un nombre de entre 1 y 100 caracteres." });
     return;
   }
   if (email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    respond(response, 400, { error: "Enter a valid email address." });
+    respond(response, 400, { error: "Ingresa un correo electrónico válido." });
     return;
   }
   if (password.length < 8 || Buffer.byteLength(password, "utf8") > 128) {
-    respond(response, 400, { error: "Password must be at least 8 characters and no more than 128 bytes." });
+    respond(response, 400, { error: "La contraseña debe tener al menos 8 caracteres y no superar los 128 bytes." });
     return;
   }
 
@@ -93,7 +93,7 @@ async function saveSignup(request, response) {
     await file.close();
   }
 
-  respond(response, 201, { message: "Signup saved." });
+  respond(response, 201, { message: "Registro guardado." });
 }
 
 const server = createServer(async (request, response) => {
@@ -115,14 +115,14 @@ const server = createServer(async (request, response) => {
       return;
     }
 
-    respond(response, 404, { error: "Not found." });
+    respond(response, 404, { error: "No encontrado." });
   } catch (error) {
     if (error.status) {
       respond(response, error.status, { error: error.message });
       return;
     }
     console.error("Signup request failed:", error);
-    respond(response, 500, { error: "Unable to save signup. Please try again later." });
+    respond(response, 500, { error: "No se pudo guardar el registro. Inténtalo de nuevo más tarde." });
   }
 });
 
